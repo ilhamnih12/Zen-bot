@@ -13,20 +13,20 @@ const __filename = fileURLToPath(import.meta.url);
 
 //~~~~~~~~~~~~< GLOBAL SETTINGS >~~~~~~~~~~~~\\
 
-global.owner = ["6282113821188"] // ['628','628'] 2 owner atau lebih
+global.owner = ["6285867420646"] // ['628','628'] 2 owner atau lebih
 global.author = 'Nazedev'
-global.botname = 'Hitori Bot'
+global.botname = 'Zenith Bot'
 global.packname = 'Bot WhatsApp'
 global.timezone = 'Asia/Jakarta' // Ganti pakai command .settimezone
 global.locale = 'en' // Ganti pakai command .setlocale
-global.listprefix = ["+","!","."]
+global.listprefix = ['/']
 global.defaultAdminKey = crypto.randomBytes(5).toString("hex");
 
 global.listv = ['•','●','■','✿','▲','➩','➢','➣','➤','✦','✧','△','❀','○','□','♤','♡','◇','♧','々','〆']
 global.tempatDB = 'database.json' // Taruh url mongodb di sini jika menggunakan mongodb. Format : 'mongodb+srv://...'
 global.tempatStore = 'baileys_store.json' // Taruh url mongodb di sini jika menggunakan mongodb. Format : 'mongodb+srv://...'
 global.pairing_code = true
-global.number_bot = '' // Kalo pake panel bisa masukin nomer di sini, jika belum ambil session. Format : '628xx'
+global.number_bot = '6283197534339' // Kalo pake panel bisa masukin nomer di sini, jika belum ambil session. Format : '628xx'
 
 global.fake = {
 	anonim: 'https://telegra.ph/file/95670d63378f7f4210f03.png',
@@ -79,8 +79,8 @@ global.APIs = {
 	neosantara: 'https://api.neosantara.xyz/v1',
 }
 global.APIKeys = {
-	'https://api.naze.biz.id': 'nz-298327ff62',
-	'https://api.neosantara.xyz/v1': 'API_KEY_NEOSANTARA_AI',
+	'https://api.naze.biz.id': 'nz-b6dab20315',
+	'https://api.neosantara.xyz/v1': 'nsk_8090818722fd44f98c1583315fe69ae3',
 }
 
 // Lainnya

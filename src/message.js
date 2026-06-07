@@ -223,7 +223,7 @@ async function LoadDataBase(naze, m) {
 			author: global.author || 'Nazedev',
 			authorPrefix: '',
 			autobackup: false,
-			botname: global.botname || 'Hitori Bot',
+			botname: global.botname || 'Zenith Bot',
 			packname: global.packname || 'Bot WhatsApp',
 			template: 'documentMessage',
 			owner: global.owner,

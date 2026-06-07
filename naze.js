@@ -30,7 +30,7 @@ import { GroupUpdate, LoadDataBase } from './src/message.js';
 import { JadiBot, StopJadiBot, ListJadiBot } from './src/jadibot.js';
 import { cmdAdd, cmdAddHit, addExpired, getPosition, getExpired, getStatus, checkStatus } from './src/database.js';
 import { rdGame, iGame, gameSlot, gameCasinoSolo, gameSamgongSolo, gameMerampok, gameBegal, daily, buy, setLimit, addLimit, addMoney, setMoney, transfer, Blackjack, SnakeLadder } from './lib/game.js';
-import { getRandom, getBuffer, fetchJson, runtime, clockString, sleep, isUrl, formatDate, formatp, generateProfilePicture, errorCache, normalize, runUpdate, updateSettings, parseMention, fixBytes, similarity, pickRandom, encodeToLetters, tarBackup } from './lib/function.js';
+import { getRandom, getBuffer, fetchJson, runtime, clockString, sleep, isUrl, formatDate, formatp, generateProfilePicture, errorCache, normalize, runUpdate, updateSettings, parseMention, fixBytes, similarity, pickRandom, encodeToLetters, tarBackup, downloadMediafire } from './lib/function.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -135,7 +135,7 @@ const naze = async (naze, m, msg, store) => {
 		const qmsg = (quoted.msg || quoted)
 		const author = set.author = global.author || 'Nazedev';
 		const packname = set.packname = global.packname || 'Bot WhatsApp';
-		const botname = set.botname = global.botname || 'Hitori Bot';
+		const botname = set.botname = global.botname || 'Zenith Bot';
 		const badWordsLower = global.badWords.map(v => v.toLowerCase());
 		const locale_day = moment.tz(global.timezone).locale(global.locale).format('dddd');
 		const date = moment.tz(global.timezone).locale(global.locale).format('DD/MM/YYYY');
@@ -1446,7 +1446,7 @@ const naze = async (naze, m, msg, store) => {
 						botname: teksnya.trim()
 					});
 					m.reply(global.mess.done)
-				} else m.reply(`Example: ${prefix + command} Hitori bot`)
+				} else m.reply(`Example: ${prefix + command} Zenith bot`)
 			}
 			break
 			case 'setpacknamebot': case 'setbotpackname': {
@@ -1458,7 +1458,7 @@ const naze = async (naze, m, msg, store) => {
 						packname: teksnya.trim()
 					});
 					m.reply(global.mess.done)
-				} else m.reply(`Example: ${prefix + command} By Hitori bot`)
+				} else m.reply(`Example: ${prefix + command} By Zenith bot`)
 			}
 			break
 			case 'setauthorbot': case 'setbotauthor': {
@@ -2322,7 +2322,7 @@ Select Bot Settings:
 				let media = await naze.downloadAndSaveMediaMessage(qmsg)
 				try {
 					let audio = await toAudio(media, 'mp4')
-					await m.reply({ document: { url: audio }, mimetype: 'audio/mpeg', fileName: `Convert By Naze Bot.mp3`})
+					await m.reply({ document: { url: audio }, mimetype: 'audio/mpeg', fileName: `Convert By Zenith Bot.mp3`})
 					if (fs.existsSync(audio)) fs.unlinkSync(audio)
 				} finally {
 					if (fs.existsSync(media)) fs.unlinkSync(media)
@@ -3337,8 +3337,10 @@ Select Bot Settings:
 				if (!text) return m.reply(`Example: ${prefix + command} https://www.mediafire.com/file/xxxxxxxxx/xxxxx.zip/file`)
 				if (!isUrl(args[0]) && !args[0].includes('mediafire.com')) return m.reply('Url Invalid!')
 				try {
-					let { result: res } = await fetchApi('/download/mediafire', { url: text })
-					await naze.sendMedia(m.chat, res.link, res.filename, `*MEDIAFIRE DOWNLOADER*\n\n*${setv} Name* : ${res.filename}\n*${setv} Size* : ${res.size}`, m)
+					m.react('⏳')
+					const file = await downloadMediafire(text)
+					await naze.sendMedia(m.chat, file.path, file.filename, `*MEDIAFIRE DOWNLOADER*\n\n*${setv} Name* : ${file.filename}\n*${setv} Size* : ${file.size}`, m)
+					if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
 					setLimit(m, db)
 				} catch (e) {
 					m.reply(global.mess.fail)
@@ -4327,7 +4329,7 @@ Select Bot Settings:
 ├ *Money* : ${db.users[m.sender] ? db.users[m.sender].money.toLocaleString('id-ID') : '0'}
 ╰─┬────❍
 ╭─┴─❍「 *BOT INFO* 」❍
-├ *Nama Bot* : ${set?.botname || 'Naze Bot'}
+├ *Nama Bot* : ${set?.botname || 'Zenith Bot'}
 ├ *Powered* : @${'0@s.whatsapp.net'.split('@')[0]}
 ├ *Owner* : @${ownerNumber[0].split('@')[0]}
 ├ *Mode* : ${naze.public ? 'Public' : 'Self'}
@@ -4598,15 +4600,6 @@ Select Bot Settings:
 					thumbnailUrl: profile,
 					sourceUrl: my.gh,
 					mentions: [m.sender, '0@s.whatsapp.net', ownerNumber[0] + '@s.whatsapp.net'],
-					contextInfo: {
-						forwardingScore: 1,
-						isForwarded: true,
-						forwardedNewsletterMessageInfo: {
-							newsletterJid: my.ch,
-							serverMessageId: null,
-							newsletterName: 'Join For More Info'
-						}
-					}
 				})
 			}
 			break

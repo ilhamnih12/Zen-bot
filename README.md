@@ -145,13 +145,13 @@ global.owner = ['628xxxxxxxxxx']
 
 #### Bot Identity
 ```js
-global.botname = 'Hitori Bot'
+global.botname = 'Zenith Bot'
 global.author = 'Nazedev'
 ```
 
 #### Command Prefix
 ```js
-global.listprefix = ['!', '.', '+']
+global.listprefix = ['/']
 ```
 
 #### User Limits & Balance
