@@ -827,6 +827,11 @@ const naze = async (naze, m, msg, store) => {
 				} else m.reply(`Example: ${prefix + command} textnya`)
 			}
 			break
+			case 'prefix': {
+				let list = global.listprefix.map(a => `- ${a}`).join('\n')
+				m.reply(`Prefix saat ini: ${prefix}\nMode Multi Prefix: ${set.multiprefix ? 'Aktif' : 'Mati'}\n\nDaftar Prefix:\n${list}`)
+			}
+			break
 			case 'listprefix': {
 				if (!isCreator) return m.reply(global.mess.owner)
 				m.reply('List Prefix :\n' + global.listprefix.map(a => '- ' + a).join('\n'));
@@ -4349,6 +4354,8 @@ Select Bot Settings:
 │${setv} ${prefix}leaderboard
 │${setv} ${prefix}request (text)
 │${setv} ${prefix}react (emoji)
+│${setv} ${prefix}help
+│${setv} ${prefix}prefix
 │${setv} ${prefix}tagme
 │${setv} ${prefix}runtime
 │${setv} ${prefix}totalfitur
