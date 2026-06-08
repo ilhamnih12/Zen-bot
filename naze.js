@@ -147,7 +147,335 @@ const naze = async (naze, m, msg, store) => {
 		const time_end = 60000 - (time_now.getSeconds() * 1000 + time_now.getMilliseconds());
 		const readmore = String.fromCharCode(8206).repeat(999)
 		const setv = pickRandom(global.listv)
-		
+
+		const menuCategoryCommands = {
+			bot: [
+				'profile',
+				'claim',
+				'buy [item] (nominal)',
+				'transfer',
+				'leaderboard',
+				'request (text)',
+				'react (emoji)',
+				'tagme',
+				'runtime',
+				'totalfitur',
+				'speed',
+				'ping',
+				'afk',
+				'rvo (reply pesan viewone)',
+				'inspect (url gc)',
+				'addmsg',
+				'delmsg',
+				'getmsg',
+				'listmsg',
+				'setcmd',
+				'delcmd',
+				'listcmd',
+				'lockcmd',
+				'q (reply pesan)',
+				'menfes (62xxx|fake name)',
+				'confes (62xxx|fake name)',
+				'roomai',
+				'jadibot',
+				'stopjadibot',
+				'listjadibot',
+				'donasi',
+				'addsewa',
+				'delsewa',
+				'listsewa'
+			],
+			group: [
+				'add (62xxx)',
+				'kick (@tag/62xxx)',
+				'promote (@tag/62xxx)',
+				'demote (@tag/62xxx)',
+				'warn (@tag/62xxx)',
+				'unwarn (@tag/62xxx)',
+				'setname (nama baru gc)',
+				'setdesc (desk)',
+				'setppgc (reply imgnya)',
+				'delete (reply pesan)',
+				'linkgrup',
+				'revoke',
+				'tagall',
+				'pin',
+				'unpin',
+				'hidetag',
+				'totag (reply pesan)',
+				'listonline',
+				'group set',
+				'group (khusus admin)'
+			],
+			search: [
+				'ytsearch (query)',
+				'spotify (query)',
+				'pixiv (query)',
+				'pinterest (query)',
+				'wallpaper (query)',
+				'ringtone (query)',
+				'google (query)',
+				'gimage (query)',
+				'npm (query)',
+				'style (query)',
+				'cuaca (kota)',
+				'tenor (query)',
+				'urban (query)'
+			],
+			download: [
+				'ytmp3 (url)',
+				'ytmp4 (url)',
+				'instagram (url)',
+				'tiktok (url)',
+				'tiktokmp3 (url)',
+				'facebook (url)',
+				'spotifydl (url)',
+				'mediafire (url)'
+			],
+			quotes: [
+				'motivasi',
+				'quotes',
+				'truth',
+				'bijak',
+				'dare',
+				'bucin',
+				'renungan'
+			],
+			tools: [
+				'get (url)',
+				'hd (reply pesan)',
+				'toaudio (reply pesan)',
+				'tomp3 (reply pesan)',
+				'tovn (reply pesan)',
+				'toimage (reply pesan)',
+				'toptv (reply pesan)',
+				'tourl (reply pesan)',
+				'tts (textnya)',
+				'toqr (textnya)',
+				'brat (textnya)',
+				'bratvid (textnya)',
+				'ssweb (url)',
+				'sticker (send/reply img)',
+				'colong (reply stiker)',
+				'smeme (send/reply img)',
+				'dehaze (send/reply img)',
+				'colorize (send/reply img)',
+				'hitamkan (send/reply img)',
+				'emojimix (emoji1+emoji2)',
+				'nulis',
+				'readmore text1|text2',
+				'qc (pesannya)',
+				'translate',
+				'wasted (send/reply img)',
+				'triggered (send/reply img)',
+				'shorturl (urlnya)',
+				'gitclone (urlnya)',
+				'fat (reply audio)',
+				'fast (reply audio)',
+				'bass (reply audio)',
+				'slow (reply audio)',
+				'tupai (reply audio)',
+				'deep (reply audio)',
+				'robot (reply audio)',
+				'blown (reply audio)',
+				'reverse (reply audio)',
+				'smooth (reply audio)',
+				'earrape (reply audio)',
+				'nightcore (reply audio)',
+				'getexif (reply sticker)'
+			],
+			ai: [
+				'ai (query)',
+				'gemini (query)',
+				'glm (query)',
+				'grok (query)',
+				'claude (query)',
+				'archipelago (query)',
+				'deepseek (query)',
+				'txt2img (query)'
+			],
+			random: ['coffe'],
+			stalker: ['wastalk', 'githubstalk'],
+			anime: ['waifu', 'neko'],
+			game: [
+				'tictactoe',
+				'suit',
+				'slot',
+				'math (level)',
+				'begal',
+				'ulartangga',
+				'blackjack',
+				'catur',
+				'casino (nominal)',
+				'samgong (nominal)',
+				'rampok (@tag)',
+				'tekateki',
+				'tebaklirik',
+				'tebakkata',
+				'tebakbom',
+				'susunkata',
+				'colorblind',
+				'tebakkimia',
+				'caklontong',
+				'tebakangka',
+				'tebaknegara',
+				'tebakgambar',
+				'tebakbendera'
+			],
+			fun: [
+				'coba',
+				'dadu',
+				'bisakah (text)',
+				'apakah (text)',
+				'kapan (text)',
+				'siapa (text)',
+				'kerangajaib (text)',
+				'cekmati (nama lu)',
+				'ceksifat',
+				'cekkhodam (nama lu)',
+				'rate (reply pesan)',
+				'jodohku',
+				'jadian',
+				'fitnah',
+				'halah (text)',
+				'hilih (text)',
+				'huluh (text)',
+				'heleh (text)',
+				'holoh (text)'
+			],
+			owner: [
+				'bot [set]',
+				'setbio',
+				'setppbot',
+				'join',
+				'leave',
+				'block',
+				'listblock',
+				'openblock',
+				'listpc',
+				'listgc',
+				'ban',
+				'unban',
+				'mute',
+				'unmute',
+				'creategc',
+				'clearchat',
+				'addprem',
+				'delprem',
+				'listprem',
+				'addlimit',
+				'adduang',
+				'setbotmessages',
+				'setbotauthor',
+				'setbotname',
+				'setbotpackname',
+				'setapikey',
+				'setbotlimit',
+				'setbotmoney',
+				'setlocale',
+				'settimezone',
+				'addprefix',
+				'delprefix',
+				'addbadword',
+				'delbadword',
+				'addowner',
+				'delowner',
+				'whitelist',
+				'getmsgstore',
+				'bot --settings',
+				'bot settings',
+				'getsession',
+				'delsession',
+				'delsampah',
+				'upsw',
+				'backup',
+				'$',
+				'>',
+				'<'
+			]
+		}
+
+		const categoryNames = {
+			bot: 'BOT',
+			group: 'GROUP',
+			search: 'SEARCH',
+			download: 'DOWNLOAD',
+			quotes: 'QUOTES',
+			tools: 'TOOLS',
+			ai: 'AI',
+			random: 'RANDOM',
+			stalker: 'STALKER',
+			anime: 'ANIME',
+			game: 'GAME',
+			fun: 'FUN',
+			owner: 'OWNER'
+		}
+
+		const getMenuCategoryText = (category) => {
+			const commands = menuCategoryCommands[category]
+			if (!commands) return null
+			return `\n╭──❍「 *${categoryNames[category]}* 」❍\n` + commands.map(cmd => `│${setv} ${prefix}${cmd}`).join('\n') + '\n╰──────❍`
+		}
+
+		const getCategoryListText = () => {
+			return `Daftar kategori menu:\n${Object.keys(menuCategoryCommands).map(cat => `- ${cat}`).join('\n')}\n\nGunakan ${prefix}menu [kategori]\nContoh: ${prefix}menu bot`;
+		}
+
+		const sendAllMenu = async () => {
+			let profile
+			try {
+				profile = await naze.profilePictureUrl(m.sender, 'image');
+			} catch (e) {
+				profile = fake.anonim
+			}
+			const menunya = `
+╭──❍「 *USER INFO* 」❍
+├ *Nama* : ${m.pushName ? m.pushName : 'Tanpa Nama'}
+├ *Id* : @${m.sender.split('@')[0]}
+├ *User* : ${isVip ? 'VIP' : isPremium ? 'PREMIUM' : 'FREE'}
+├ *Limit* : ${isVip ? 'VIP' : db.users[m.sender].limit }
+├ *Money* : ${db.users[m.sender] ? db.users[m.sender].money.toLocaleString('id-ID') : '0'}
+╰─┬────❍
+╭─┴─❍「 *BOT INFO* 」❍
+├ *Nama Bot* : ${set?.botname || 'Zenith Bot'}
+├ *Powered* : @${'0@s.whatsapp.net'.split('@')[0]}
+├ *Owner* : @${ownerNumber[0].split('@')[0]}
+├ *Mode* : ${naze.public ? 'Public' : 'Self'}
+├ *Prefix* :${set.multiprefix ? '「 MULTI-PREFIX 」' : ' *'+prefix+'*' }
+├ *Premium Feature* : 🔸️
+╰─┬────❍
+╭─┴─❍「 *ABOUT* 」❍
+├ *Date* : ${date}
+├ *Day* : ${locale_day}
+├ *Time* : ${date_time}
+╰──────❍
+╭──❍「 *BOT* 」❍
+│${setv} ${prefix}profile
+│${setv} ${prefix}claim
+│${setv} ${prefix}buy [item] (nominal)
+│${setv} ${prefix}transfer
+│${setv} ${prefix}leaderboard
+│${setv} ${prefix}request (text)
+│${setv} ${prefix}react (emoji)
+│${setv} ${prefix}help
+│${setv} ${prefix}prefix
+│${setv} ${prefix}tagme
+│${setv} ${prefix}runtime
+│${setv} ${prefix}totalfitur
+│${setv} ${prefix}speed
+│${setv} ${prefix}ping
+│${setv} ${prefix}afk
+╰──────❍`
+			await naze.sendMessageV3(m.chat, {
+				text: menunya,
+				title: ucapanWaktu,
+				description: packname,
+				thumbnailUrl: profile,
+				sourceUrl: my.gh,
+				mentions: [m.sender, '0@s.whatsapp.net', ownerNumber[0] + '@s.whatsapp.net'],
+			})
+		}
+
 		const isVip = isCreator || (db.users[m.sender] ? db.users[m.sender].vip : false)
 		const isBan = isCreator || (db.users[m.sender] ? db.users[m.sender].ban : false)
 		const isLimit = isCreator || (db.users[m.sender] ? (db.users[m.sender].limit > 0) : false)
@@ -4309,13 +4637,24 @@ Select Bot Settings:
 			
 			// Menu
 			case 'menu': {
-				if (args[0] == 'set') {
+				const sub = (args[0] || '').toLowerCase();
+				if (sub == 'set') {
 					if (!isCreator) return m.reply(mess.owner)
 					if (['1','2','3'].includes(args[1])) {
 						set.template = parseInt(Number(args[1]))
 						m.reply('Sukses Mengubah Template Menu')
 					} else m.reply(`Template Menu:\n- 1 (Button Menu)\n- 2 (List Menu)\n- 3 (Document Menu)\n\nExample: ${prefix + command} set 1`)
-				} else await templateMenu(naze, set.template, m, prefix, setv, db, { locale_day, date, date_time, botNumber, author, packname, isVip, isPremium, ucapanWaktu })
+				} else if (sub == 'kategori') {
+					m.reply(getCategoryListText())
+				} else if (sub == 'all') {
+					await sendAllMenu()
+				} else if (sub && menuCategoryCommands[sub]) {
+					const categoryText = getMenuCategoryText(sub)
+					if (categoryText) return m.reply(categoryText)
+					m.reply('Kategori tidak ditemukan. Gunakan ' + prefix + 'menu kategori untuk melihat daftar kategori.')
+				} else {
+					await templateMenu(naze, set.template, m, prefix, setv, db, { locale_day, date, date_time, botNumber, author, packname, isVip, isPremium, ucapanWaktu })
+				}
 			}
 			break
 			case 'allmenu': {
