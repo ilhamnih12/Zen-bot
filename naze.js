@@ -7,6 +7,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import yts from 'yt-search';
 import fetch from 'node-fetch';
+import ytdl from 'ytdl-core';
 import { Chess } from 'chess.js';
 import { fileURLToPath } from 'url';
 import FormData from 'form-data';
@@ -31,6 +32,10 @@ import { JadiBot, StopJadiBot, ListJadiBot } from './src/jadibot.js';
 import { cmdAdd, cmdAddHit, addExpired, getPosition, getExpired, getStatus, checkStatus } from './src/database.js';
 import { rdGame, iGame, gameSlot, gameCasinoSolo, gameSamgongSolo, gameMerampok, gameBegal, daily, buy, setLimit, addLimit, addMoney, setMoney, transfer, Blackjack, SnakeLadder } from './lib/game.js';
 import { getRandom, getBuffer, fetchJson, runtime, clockString, sleep, isUrl, formatDate, formatp, generateProfilePicture, errorCache, normalize, runUpdate, updateSettings, parseMention, fixBytes, similarity, pickRandom, encodeToLetters, tarBackup, downloadMediafire } from './lib/function.js';
+
+const ytSearchCache = new Map();
+const ytFormatCache = new Map();
+const YT_CACHE_TTL = 1000 * 60 * 7;
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +63,34 @@ try {
 
 const fileContent = fs.readFileSync(__filename, 'utf-8');
 const casesArray = [...fileContent.matchAll(/case\s+['"]([^'"]+)['"]/g)].map(match => match[1]);
+
+function cleanupYtCache() {
+  const now = Date.now();
+  for (const [key, value] of ytSearchCache) {
+    if (now - value.created > YT_CACHE_TTL) ytSearchCache.delete(key);
+  }
+  for (const [key, value] of ytFormatCache) {
+    if (now - value.created > YT_CACHE_TTL) ytFormatCache.delete(key);
+  }
+}
+
+function getYoutubeSearchCache(chat, sender) {
+  cleanupYtCache();
+  return ytSearchCache.get(`${chat}|${sender}`);
+}
+
+function setYoutubeSearchCache(chat, sender, data) {
+  ytSearchCache.set(`${chat}|${sender}`, { ...data, created: Date.now() });
+}
+
+function getYoutubeFormatCache(chat, sender) {
+  cleanupYtCache();
+  return ytFormatCache.get(`${chat}|${sender}`);
+}
+
+function setYoutubeFormatCache(chat, sender, data) {
+  ytFormatCache.set(`${chat}|${sender}`, { ...data, created: Date.now() });
+}
 
 const naze = async (naze, m, msg, store) => {
 	if (!global.db) global.db = {};
@@ -133,8 +166,33 @@ const naze = async (naze, m, msg, store) => {
 		const text = global.q = args.join(' ');
 		const mime = (quoted.msg || quoted).mimetype || ''
 		const qmsg = (quoted.msg || quoted)
+		const selectNumber = !isCmd && /^\d+$/.test(body.trim()) ? parseInt(body.trim(), 10) : null;
 		const author = set.author = global.author || 'Nazedev';
 		const packname = set.packname = global.packname || 'Bot WhatsApp';
+		if (selectNumber && m.quoted?.text) {
+			const formatCache = getYoutubeFormatCache(m.chat, m.sender)
+			const isFormatList = /Pilih (Resolusi Video|Kualitas Audio) untuk:/i.test(m.quoted.text)
+			if (formatCache && isFormatList) {
+				const selectedFormat = formatCache.formats?.[selectNumber - 1]
+				if (!selectedFormat) return m.reply('Nomor tidak valid. Silakan pilih ulang.')
+				try {
+					m.react('⏳')
+					if (formatCache.type === 'video') {
+						await m.reply({
+							video: { url: selectedFormat.url },
+							mimetype: selectedFormat.mimeType?.split(';')[0] || 'video/mp4',
+							caption: `*📍Title:* ${formatCache.title}\n*✏Quality:* ${selectedFormat.qualityLabel || (selectedFormat.height ? selectedFormat.height + 'p' : 'N/A')}\n*📦Size:* ${selectedFormat.contentLength ? fixBytes(selectedFormat.contentLength) : 'N/A'}`
+						})
+					} else {
+						await m.reply({ audio: { url: selectedFormat.url }, mimetype: selectedFormat.mimeType?.split(';')[0] || 'audio/mpeg' })
+					}
+					setLimit(m, db)
+				} catch (e) {
+					m.reply(global.mess.fail)
+				}
+				return
+			}
+		}
 		const botname = set.botname = global.botname || 'Zenith Bot';
 		const badWordsLower = global.badWords.map(v => v.toLowerCase());
 		const locale_day = moment.tz(global.timezone).locale(global.locale).format('dddd');
@@ -3366,15 +3424,42 @@ Select Bot Settings:
 				m.react('⏳')
 				try {
 					const res = await yts.search(text);
-					const hasil = pickRandom(res.all)
-					const teksnya = `*📍Title:* ${hasil.title || 'Tidak tersedia'}\n*✏Description:* ${hasil.description || 'Tidak tersedia'}\n*🌟Channel:* ${hasil.author?.name || 'Tidak tersedia'}\n*⏳Duration:* ${hasil.seconds || 'Tidak tersedia'} second (${hasil.timestamp || 'Tidak tersedia'})\n*🔎Source:* ${hasil.url || 'Tidak tersedia'}\n\n_note : jika ingin mendownload silahkan_\n_pilih ${prefix}ytmp3 url_video atau ${prefix}ytmp4 url_video_`;
-					await m.reply({ image: { url: hasil.thumbnail }, caption: teksnya })
-				} catch (e) {
+					const videos = (res.videos || []).slice(0, 8);
+					if (!videos.length) throw new Error('NoResults');
+					let teksnya = `*📍 Hasil Pencarian YouTube untuk:* ${text}\n\n`;
+					videos.forEach((video, index) => {
+						teksnya += `*${index + 1}.* ${video.title}\n`;
+						teksnya += `Channel: ${video.author?.name || 'Tidak tersedia'}\n`;
+						teksnya += `Duration: ${video.timestamp || 'Tidak tersedia'}\n`;
+						teksnya += `Link: ${video.url}\n\n`;
+					});
+					teksnya += `Reply nomor video ke pesan ini lalu kirim perintah berikut:\n`;
+					teksnya += `${prefix}ytmp3 <nomor> atau ${prefix}ytmp4 <nomor>\n`;
+					teksnya += `Contoh: ${prefix}ytmp4 1`;
+					const { key } = await m.reply(teksnya);
+					setYoutubeSearchCache(m.chat, m.sender, { results: videos, id: key?.id });
+				} catch (error) {
 					try {
 						const res = await fetchApi('/search/youtube', { query: text });
-						const hasil = pickRandom(res.result.items)
-						const teksnya = `*📍Title:* ${hasil.snippet.title || 'Tidak tersedia'}\n*✏Description:* ${hasil.snippet.description || 'Tidak tersedia'}\n*🌟Channel:* ${hasil.snippet.channelTitle || 'Tidak tersedia'}\n*⏳Duration:* ${hasil.duration || 'Tidak tersedia'}\n*🔎Source:* https://youtu.be/${hasil.id.videoId || 'Tidak tersedia'}\n\n_note : jika ingin mendownload silahkan_\n_pilih ${prefix}ytmp3 url_video atau ${prefix}ytmp4 url_video_`;
-						await m.reply({ image: { url: hasil.snippet.thumbnails.medium.url }, caption: teksnya })
+						const videos = (res.result.items || []).filter(item => item.id?.videoId).slice(0, 8).map(item => ({
+							title: item.snippet.title,
+							author: { name: item.snippet.channelTitle },
+							timestamp: item.duration || 'Tidak tersedia',
+							url: `https://youtu.be/${item.id.videoId}`
+						}));
+						if (!videos.length) throw new Error('NoResults');
+						let teksnya = `*📍 Hasil Pencarian YouTube untuk:* ${text}\n\n`;
+						videos.forEach((video, index) => {
+							teksnya += `*${index + 1}.* ${video.title}\n`;
+							teksnya += `Channel: ${video.author?.name || 'Tidak tersedia'}\n`;
+							teksnya += `Duration: ${video.timestamp || 'Tidak tersedia'}\n`;
+							teksnya += `Link: ${video.url}\n\n`;
+						});
+						teksnya += `Reply nomor video ke pesan ini lalu kirim perintah berikut:\n`;
+						teksnya += `${prefix}ytmp3 <nomor> atau ${prefix}ytmp4 <nomor>\n`;
+						teksnya += `Contoh: ${prefix}ytmp4 1`;
+						const { key } = await m.reply(teksnya);
+						setYoutubeSearchCache(m.chat, m.sender, { results: videos, id: key?.id });
 					} catch (e) {
 						m.reply('Post not available!')
 					}
@@ -3539,16 +3624,58 @@ Select Bot Settings:
 			// Downloader Menu
 			case 'ytmp3': case 'ytaudio': case 'ytplayaudio': {
 				if (!isLimit) return m.reply(global.mess.limit)
-				if (!text) return m.reply(`Example: ${prefix + command} url_youtube`)
-				if (!text.includes('youtu')) return m.reply('Url Tidak Mengandung Result Dari Youtube!')
+				if (!text && !m.quoted) return m.reply(`Example: ${prefix + command} url_youtube or ${prefix + command} 1 (reply to results)`)
+				const argsNumber = text.trim().split(/ +/).filter(Boolean)
+				const selection = argsNumber[0]
+				const qualitySelection = argsNumber[1]
+				const searchCache = getYoutubeSearchCache(m.chat, m.sender)
+				const formatCache = getYoutubeFormatCache(m.chat, m.sender)
+				const selectionIsNumber = /^\d+$/.test(selection)
+				if (selectionIsNumber && !selection.includes('youtu') && formatCache?.type === 'audio' && !qualitySelection) {
+					const audioFormat = formatCache.formats?.[parseInt(selection, 10) - 1]
+					if (!audioFormat) return m.reply('Nomor kualitas tidak valid. Silakan pilih ulang.')
+					m.react('⏳')
+					await m.reply({ audio: { url: audioFormat.url }, mimetype: audioFormat.mimeType?.split(';')[0] || 'audio/mpeg' })
+					setLimit(m, db)
+					return
+				}
+				let url = ''
+				if (selectionIsNumber && searchCache) {
+					const index = parseInt(selection, 10) - 1
+					const video = searchCache.results[index]
+					if (!video) return m.reply('Nomor video tidak valid. Silakan pilih nomor yang tersedia.')
+					url = video.url
+				} else if (selection?.includes('youtu')) {
+					url = selection
+				} else {
+					return m.reply(`Example: ${prefix + command} url_youtube or ${prefix + command} 1 (reply to results)`)
+				}
 				m.react('⏳')
 				try {
-					const hasil = await ytMp3(text);
-					await m.reply({ audio: { url: hasil.result }, mimetype: 'audio/mpeg' })
+					const info = await ytdl.getInfo(url)
+					const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
+						.filter(format => format.url)
+						.sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0))
+						.slice(0, 6)
+					if (!audioFormats.length) throw new Error('NoAudioFormats')
+					if (!qualitySelection) {
+						let teks = `*📍 Pilih Kualitas Audio untuk:* ${info.videoDetails.title}\n\n`
+						audioFormats.forEach((format, i) => {
+							teks += `${i + 1}. ${format.container || 'audio'} ${format.audioBitrate || 'N/A'} kbps ${format.contentLength ? `[${fixBytes(format.contentLength)}]` : ''}\n`
+						})
+						teks += `\nReply pesan ini dengan nomor pilihan atau kirim kembali:\n${prefix + command} ${selection} <nomor>\nContoh: ${prefix + command} ${selection} 2`
+						setYoutubeFormatCache(m.chat, m.sender, { url, type: 'audio', formats: audioFormats, title: info.videoDetails.title })
+						return m.reply(teks)
+					}
+					const qualityIndex = parseInt(qualitySelection, 10) - 1
+					const pending = getYoutubeFormatCache(m.chat, m.sender)
+					const selectedFormat = pending && pending.url === url && pending.formats?.[qualityIndex] ? pending.formats[qualityIndex] : audioFormats[qualityIndex]
+					if (!selectedFormat) return m.reply('Nomor kualitas tidak valid. Silakan pilih lagi.')
+					await m.reply({ audio: { url: selectedFormat.url }, mimetype: selectedFormat.mimeType?.split(';')[0] || 'audio/mpeg' })
 					setLimit(m, db)
 				} catch (e) {
 					try {
-						const { result: hasil } = await fetchApi('/download/youtube', { url: text });
+						const { result: hasil } = await fetchApi('/download/youtube', { url })
 						await m.reply({ audio: { url: hasil.download }, mimetype: 'audio/mpeg' })
 						setLimit(m, db)
 					} catch (e) {
@@ -3559,30 +3686,62 @@ Select Bot Settings:
 			break
 			case 'ytmp4': case 'ytvideo': case 'ytplayvideo': {
 				if (!isLimit) return m.reply(global.mess.limit)
-				if (!text) return m.reply(`Example: ${prefix + command} url_youtube`)
-				if (!text.includes('youtu')) return m.reply('Url Tidak Mengandung Result Dari Youtube!')
+				if (!text && !m.quoted) return m.reply(`Example: ${prefix + command} url_youtube or ${prefix + command} 1 (reply to results)`)
+				const argsNumber = text.trim().split(/ +/).filter(Boolean)
+				const selection = argsNumber[0]
+				const qualitySelection = argsNumber[1]
+				const searchCache = getYoutubeSearchCache(m.chat, m.sender)
+				const formatCache = getYoutubeFormatCache(m.chat, m.sender)
+				const selectionIsNumber = /^\d+$/.test(selection)
+				if (selectionIsNumber && !selection.includes('youtu') && formatCache?.type === 'video' && !qualitySelection) {
+					const videoFormat = formatCache.formats?.[parseInt(selection, 10) - 1]
+					if (!videoFormat) return m.reply('Nomor kualitas tidak valid. Silakan pilih ulang.')
+					m.react('⏳')
+					await m.reply({ video: { url: videoFormat.url }, mimetype: videoFormat.mimeType?.split(';')[0] || 'video/mp4', caption: `*📍Title:* ${formatCache.title}\n*✏Quality:* ${videoFormat.qualityLabel || (videoFormat.height ? videoFormat.height + 'p' : 'N/A')}\n*📦Size:* ${videoFormat.contentLength ? fixBytes(videoFormat.contentLength) : 'N/A'}` })
+					setLimit(m, db)
+					return
+				}
+				let url = ''
+				if (selectionIsNumber && searchCache) {
+					const index = parseInt(selection, 10) - 1
+					const video = searchCache.results[index]
+					if (!video) return m.reply('Nomor video tidak valid. Silakan pilih nomor yang tersedia.')
+					url = video.url
+				} else if (selection?.includes('youtu')) {
+					url = selection
+				} else {
+					return m.reply(`Example: ${prefix + command} url_youtube or ${prefix + command} 1 (reply to results)`)
+				}
 				m.react('⏳')
-				let videoPath = null;
 				try {
-					const hasil = await ytMp4(text);
-					videoPath = hasil.result;
-					await m.reply({ video: { url: videoPath }, caption: `*📍Title:* ${hasil.title}\n*✏Description:* ${hasil.desc ? hasil.desc : ''}\n*🚀Channel:* ${hasil.channel}\n*🗓Upload at:* ${hasil.uploadDate}`});
+					const info = await ytdl.getInfo(url)
+					const videoFormats = ytdl.filterFormats(info.formats, 'videoandaudio')
+						.filter(format => format.url && format.container === 'mp4')
+						.sort((a, b) => (b.height || 0) - (a.height || 0))
+						.slice(0, 8)
+					if (!videoFormats.length) throw new Error('NoVideoFormats')
+					if (!qualitySelection) {
+						let teks = `*📍 Pilih Resolusi Video untuk:* ${info.videoDetails.title}\n\n`
+						videoFormats.forEach((format, i) => {
+							teks += `${i + 1}. ${format.qualityLabel || format.height + 'p'} ${format.container || 'mp4'} ${format.contentLength ? `[${fixBytes(format.contentLength)}]` : ''}\n`
+						})
+						teks += `\nReply pesan ini dengan nomor pilihan atau kirim kembali:\n${prefix + command} ${selection} <nomor>\nContoh: ${prefix + command} ${selection} 2`
+						setYoutubeFormatCache(m.chat, m.sender, { url, type: 'video', formats: videoFormats, title: info.videoDetails.title })
+						return m.reply(teks)
+					}
+					const qualityIndex = parseInt(qualitySelection, 10) - 1
+					const pending = getYoutubeFormatCache(m.chat, m.sender)
+					const selectedFormat = pending && pending.url === url && pending.formats?.[qualityIndex] ? pending.formats[qualityIndex] : videoFormats[qualityIndex]
+					if (!selectedFormat) return m.reply('Nomor kualitas tidak valid. Silakan pilih lagi.')
+					await m.reply({ video: { url: selectedFormat.url }, mimetype: selectedFormat.mimeType?.split(';')[0] || 'video/mp4', caption: `*📍Title:* ${info.videoDetails.title}\n*✏Quality:* ${selectedFormat.qualityLabel || 'N/A'}\n*📦Size:* ${selectedFormat.contentLength ? fixBytes(selectedFormat.contentLength) : 'N/A'}` })
 					setLimit(m, db)
 				} catch (e) {
 					try {
-						const { result: hasil } = await fetchApi('/download/youtube', { url: text, format: '1080' });
+						const { result: hasil } = await fetchApi('/download/youtube', { url, format: '1080' });
 						await m.reply({ document: { url: hasil.download }, mimetype: 'video/mp4', fileName: `${hasil.title || Date.now()}.mp4`, caption: `*📍Title:* ${hasil.title}\n*✏Quality:* ${hasil.quality ? hasil.quality : ''}\n*⏳Duration:* ${hasil.duration}` })
 						setLimit(m, db)
 					} catch (e) {
 						m.reply(global.mess.fail);
-					}
-				} finally {
-					if (videoPath && fs.existsSync(videoPath)) {
-						try {
-							fs.unlinkSync(videoPath);
-						} catch (e) {
-							console.error(e);
-						}
 					}
 				}
 			}
