@@ -414,7 +414,7 @@ const naze = async (naze, m, msg, store) => {
 		const getMenuCategoryText = (category) => {
 			const commands = menuCategoryCommands[category]
 			if (!commands) return null
-			return `\n╭──❍「 *${categoryNames[category]}* 」❍\n` + commands.map(cmd => `│${setv} ${prefix}${cmd}`).join('\n') + '\n╰──────❍`
+			return `\n╭──❍「 *${categoryNames[category]}* 」❍\n` + commands.map(cmd => `│${setv} ${prefix}${cmd}`).join('\n') + '\n╰──────❍'
 		}
 
 		const getCategoryListText = () => {
